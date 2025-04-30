@@ -1,18 +1,20 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { model } from "mongoose";
 
-interface ITask extends Document {
+export interface ITask extends Document {
     URL: string;
     isActive: boolean;
-    NotifyDiscord: boolean;
-    WebHook: string;
+    notifyDiscord: boolean;
+    webHook: string;
     User: mongoose.Schema.Types.ObjectId;
-    Logs: string[];
-    FailCound: number;
+    logs: string[];
+    failedCount: number;
     createdAt: Date;
+    max: number;
+    interval:number    
 }
 
-interface IUser extends Document {
+export interface IUser extends Document {
     email: string;
     Tasks: ITask[];
     isPaid: boolean;
@@ -28,11 +30,11 @@ const TaskSchema = new Schema<ITask>({
         type: Boolean,
         default: true
     },
-    NotifyDiscord: {
+    notifyDiscord: {
         type: Boolean,
         default: false
     },
-    WebHook: {
+    webHook: {
         type: String,
         required: false
     },
@@ -40,15 +42,29 @@ const TaskSchema = new Schema<ITask>({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
-    Logs: [
+    logs: [
         {
             type: String,
             required: false
         }
     ],
-    FailCound: {
+    failedCount: {
         type: Number,
         default: 0
+    },
+    max: {
+        type: Number,
+        default: 5
+    },
+    interval: {
+        type: Number,
+        default: 5,
+        min: 1,
+        max: 60,
+        validate: {
+            validator:Number.isInteger,
+            message: 'Interval must be an integer between 1 minute and 60 minutes.'
+        }
     },
     createdAt: {
         type: Date,
