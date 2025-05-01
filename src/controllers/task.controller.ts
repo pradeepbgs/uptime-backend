@@ -13,7 +13,7 @@ export const addTask = async (ctx: ContextType) => {
 
     try {
         const user: IUser = ctx.get('user')!;
-        const body = ctx.body;
+        const body = await ctx.body;
         if (!body)
             return ctx.json({ message: 'Body is required' }, 400)
 
@@ -74,7 +74,7 @@ export const getUserTasks = async (ctx: ContextType) => {
 export const updateTask = async (ctx: ContextType) => {
     try {
         const user: IUser = ctx.get('user')!;
-        const body = ctx.body;
+        const body = await ctx.body;
         if (!body)
             return ctx.json({ message: 'Body is required' }, 400)
 

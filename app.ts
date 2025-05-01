@@ -37,7 +37,7 @@ app.use(securityMiddleware)
 
 app
 .setupFilter()
-.publicRoutes('/',"/api/v1/register","/api/v1/login",'/cookie')
+.publicRoutes('/',"/api/v1/auth", "/api/v1/auth/google", "/api/v1/auth/google/callback", '/api/v1/logout')
 .permitAll()
 .authenticateJwtDB(jwt,UserModel)
 
@@ -45,6 +45,7 @@ app
 app.get("/", (ctx:ContextType) => {
     return ctx.json({ message: "Hello World" })
 })
+
 
 // app.get("/cookie", (ctx: ContextType) => {
 //     const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET;

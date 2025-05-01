@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { model } from "mongoose";
+// import jwt from "jsonwebtoken";
 
 export interface ITask extends Document {
     url: string;
@@ -11,11 +12,13 @@ export interface ITask extends Document {
     failedCount: number;
     createdAt: Date;
     max: number;
-    interval:number    
+    interval: number
 }
 
 export interface IUser extends Document {
     email: string;
+    name:string;
+    avatar:string
     tasks: ITask[];
     isPaid: boolean;
     role: string;
@@ -24,7 +27,12 @@ export interface IUser extends Document {
     minInterval: number;
 }
 
-const validateEmail = function(email:string) {
+export interface UserMethods {
+    generateAccessToken(): string;
+    generateRefreshToken(): string;
+  }
+
+const validateEmail = function (email: string) {
     var re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     return re.test(email)
 };
@@ -70,11 +78,11 @@ const TaskSchema = new Schema<ITask>({
         min: 1,
         max: 60,
         validate: {
-            validator:Number.isInteger,
+            validator: Number.isInteger,
             message: 'Interval must be an integer between 1 minute and 60 minutes.'
         }
     },
-},{timestamps:true})
+}, { timestamps: true })
 
 const userSchema = new Schema<IUser>({
     email: {
@@ -85,6 +93,15 @@ const userSchema = new Schema<IUser>({
         trim: true,
         validate: [validateEmail, 'Please fill a valid email address'],
         match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2, 3})+$/, 'Please fill a valid email address']
+    },
+    name:{
+        type: String,
+        required: false,
+        default: "User"
+    },
+    avatar:{
+        type: String,
+        required: false,
     },
     isPaid: {
         type: Boolean,
@@ -113,7 +130,27 @@ const userSchema = new Schema<IUser>({
         type: Number,
         default: 10
     }
-}, {timestamps:true})
+}, { timestamps: true })
+
+// userSchema.methods.generateAccessToken = function (): string {
+//     const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+//     const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY;
+
+//     if (!ACCESS_TOKEN_SECRET || !ACCESS_TOKEN_EXPIRY) {
+//         throw new Error("Access token environment variables are not defined.");
+//     }
+
+//     return jwt.sign(
+        
+//         { _id: this._id },
+        
+//         ACCESS_TOKEN_SECRET,
+        
+//         {
+//             expiresIn: ACCESS_TOKEN_EXPIRY,
+//         }
+//     );
+// };
 
 export const UserModel = model<IUser>("User", userSchema)
 export const TaskModel = model<ITask>("Task", TaskSchema)
