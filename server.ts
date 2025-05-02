@@ -2,7 +2,7 @@ import { app } from "./app";
 import { pingQueue } from "./src/bullmq/queue";
 import connectDB from "./src/db";
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 
 await connectDB()
