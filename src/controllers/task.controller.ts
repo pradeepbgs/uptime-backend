@@ -1,5 +1,6 @@
 import type { ContextType } from "diesel-core";
 import { TaskModel, type IUser } from "../models/user.model";
+import { pingQueue } from "../bullmq/queue";
 
 
 
@@ -51,7 +52,19 @@ export const addTask = async (ctx: ContextType) => {
         if (!task) {
             return ctx.json({ message: 'error while saving task' }, 500)
         }
-
+        pingQueue.add('ping-queue',
+            {
+                url,
+                taskId: task._id,
+                max: user.maxTasks,
+                webhook: '',
+                interval
+            }, {
+            jobId: `task-${task._id}-${user._id}-${interval}`,
+            repeat: {
+                every: interval * 60 * 1000
+            }
+        })
         return ctx.json({ message: 'Task added successfully', task: task }, 200)
     } catch (error) {
         return ctx.json({ message: 'error while saving task' }, 500)
@@ -115,7 +128,7 @@ export const deleteTask = async (ctx: ContextType) => {
         if (!id)
             return ctx.json({ message: 'Task Id is required' }, 400)
 
-        const task = await TaskModel.findOneAndDelete({_id:id, user:user._id})
+        const task = await TaskModel.findOneAndDelete({ _id: id, user: user._id })
         if (!task) {
             return ctx.json({ message: 'Task not found' }, 404)
         }
