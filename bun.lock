@@ -8,7 +8,7 @@
         "@types/jsonwebtoken": "^9.0.9",
         "bcrypt": "^5.1.1",
         "bullmq": "^5.51.1",
-        "diesel-core": "^1.2.5",
+        "diesel-core": "^1.2.8",
         "dotenv": "^16.5.0",
         "google-auth-library": "^9.15.1",
         "ioredis": "^5.6.1",
@@ -181,7 +181,7 @@
 
     "detect-libc": ["detect-libc@2.0.4", "", {}, "sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA=="],
 
-    "diesel-core": ["diesel-core@1.2.5", "", { "dependencies": { "@types/uuid": "^10.0.0", "uuid": "^11.1.0" }, "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-f0p2QdmFnbsgljO4l0wLJwCavSha+urY0wYs7Le41tGfYjguIM3iPZOAuiBSWDhe51VGwqTZMjVGTx7f//gB9g=="],
+    "diesel-core": ["diesel-core@1.2.8", "", { "dependencies": { "@types/uuid": "^10.0.0", "uuid": "^11.1.0" }, "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-/VzQjh5beBHosy7d3DjmDHh5orlBWSG786MxE1Jwy2yfM8AJMBgzFqTyu5p9hP9Jx8Ds3j0hWyxXM5dgYX0xlw=="],
 
     "dotenv": ["dotenv@16.5.0", "", {}, "sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg=="],
 

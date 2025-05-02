@@ -33,22 +33,25 @@ export const Auth = async (ctx: ContextType) => {
         }
         // check if user exist in DB
         const existingUser: IUser | null = await UserModel.findOne({ email: payload.email })
-        const cookieOptions: CookieOptions = {
+        
+        const cookieOptions:CookieOptions = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-        };
+            path:'/',
+            secure: false, 
+            sameSite: 'Lax', 
+            maxAge: 5 * 24 * 60 * 60 * 1000,
+          };
 
         let response;
 
         if (existingUser) {
 
             const { accessToken, refreshToken }: { accessToken: string, refreshToken: string } = await generateAccessAndRefreshToken(existingUser)
-            
+
             ctx.status = 200
             ctx.setCookie("accessToken", accessToken, cookieOptions);
             ctx.setCookie("refreshToken", refreshToken, cookieOptions);
-            
+
             response = {
                 message: "User logged in successfully",
                 user: existingUser,
@@ -63,13 +66,16 @@ export const Auth = async (ctx: ContextType) => {
                 avatar: payload.picture
             })
             await newUser.save()
-            
+
             const { accessToken, refreshToken }: { accessToken: string, refreshToken: string } = await generateAccessAndRefreshToken(newUser)
-            
+
             ctx.status = 200
             ctx.setCookie("accessToken", accessToken, cookieOptions);
-            ctx.setCookie("refreshToken", refreshToken, cookieOptions);
-            
+            ctx.setCookie("refreshToken", refreshToken, {
+                ...cookieOptions,
+                maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days for refresh token
+            });
+
             response = {
                 message: "User logged in successfully",
                 user: newUser,
@@ -82,7 +88,7 @@ export const Auth = async (ctx: ContextType) => {
 
     } catch (error: any) {
         console.log('error while auth user ', error?.message)
-        return ctx.json({ error: error.message },500)
+        return ctx.json({ error: error.message }, 500)
     }
 }
 
@@ -93,6 +99,17 @@ export const Logout = async (ctx: ContextType) => {
         ctx.setCookie("accessToken", "", { maxAge: 0 });
         ctx.setCookie("refreshToken", "", { maxAge: 0 });
         return ctx.json({ message: "User logged out successfully" })
+    } catch (error: any) {
+        return ctx.json({ error: error.message })
+    }
+}
+
+
+export const checkAuth = (ctx: ContextType) => {
+    try {
+        const user = ctx.get('user')
+        ctx.status = 200
+        return ctx.json({ user })
     } catch (error: any) {
         return ctx.json({ error: error.message })
     }
