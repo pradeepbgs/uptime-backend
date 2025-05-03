@@ -1,10 +1,12 @@
-import { Diesel } from "diesel-core";
+import { Diesel, type ContextType } from "diesel-core";
+import { addTask, getTaskDetails, getUserTasks } from "../controllers/task.controller";
 
 
 export const taskRouter = new Diesel()
 
 taskRouter
-    .post('/')
-    .get('/')
+    .post('/',addTask)
+    .get('/', getUserTasks)
+    .get('/:id', getTaskDetails)
     .delete('/')
     .put('/')

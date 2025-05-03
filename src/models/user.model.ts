@@ -75,12 +75,12 @@ const TaskSchema = new Schema<ITask>({
     interval: {
         type: Number,
         default: 5,
-        min: 1,
-        max: 60,
-        validate: {
-            validator: Number.isInteger,
-            message: 'Interval must be an integer between 1 minute and 60 minutes.'
-        }
+        // min: 0.1,
+        // max: 60,
+        // validate: {
+        //     validator: Number.isInteger,
+        //     message: 'Interval must be an integer between 1 minute and 60 minutes.'
+        // }
     },
 }, { timestamps: true })
 

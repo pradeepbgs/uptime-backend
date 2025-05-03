@@ -15,13 +15,14 @@ const app = new Diesel({
 
 
 export async function authJwt(ctx: ContextType): Promise<void | null | Response> {
-  const token = ctx.cookies?.accessToken
+  const token = ctx.cookies?.accessToken ?? ctx.req.headers?.authorization?.split(" ")[1];
+  console.log('token', token)
   if (!token) {
     return ctx.json({ message: "Authentication token missing" },401);
   }
   try {
     const user = jwt.verify(token, secret);
-    console.log('user', user)
+    // console.log('user', user)
     ctx.set('user',user);
   } catch (error) {
     console.log('error', error)
