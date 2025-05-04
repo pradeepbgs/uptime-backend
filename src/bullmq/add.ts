@@ -9,7 +9,15 @@ for (const job of repeatables) {
 // for (let i = 0; i < 1000; i++) {
   await redisClient.set(`task:task-mock-task-id-123`, JSON.stringify({
     isActive: true,
-    failedCount: 0
+    failedCount: 0,
+    url: `http://localhost:3002`,
+    userId: 'abc123',
+    taskId: `task-mock-task-id-123`,
+    interval: 1,
+    max: 3,
+    webHook: '',
+    notifyDiscord:false,
+    email:'exvillagerbgs@gmail.com'
   }));
   await pingQueue.add('ping-queue', {
     url: `http://localhost:3002`,
@@ -17,8 +25,10 @@ for (const job of repeatables) {
     taskId: `task-mock-task-id-123`,
     interval: 1,
     max: 3,
-    webhook: '',
-    failedCount: 0
+    webHook: '',
+    failedCount: 0,
+    notifyDiscord:false,
+    email:'exvillagerbgs@gmail.com'
   }, {
     jobId: `task-mock-task-id-123`,
     attempts: 3,

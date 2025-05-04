@@ -82,7 +82,7 @@ const worker = new Worker(
 async function handleFailure(taskId: string, taskKey: string, attempts: number, taskData: Record<string, number>, url: string) {
     try {
         const currentFailedCount = (taskData.failedCount || 0) + 1;
-
+        console.log('server is down with url %s', url)
         await redisClient.set(taskKey, JSON.stringify({
             ...taskData,
             failedCount: currentFailedCount,
@@ -109,16 +109,17 @@ async function handleFailure(taskId: string, taskKey: string, attempts: number, 
 
             return
         }
-
+        console.log("we came till this")
         await redisClient.set(taskKey, JSON.stringify({
             ...taskData,
             isActive: false,
             failedCount: currentFailedCount,
         }))
-
+        console.log('now this')
         await removeFromQueue(taskId, taskData.interval!)
         // TODO: push failure notification
-        handleNotification(taskData, url)
+        console.log('now this 2')
+        // handleNotification(taskData, url)
 
     } catch (error) {
         console.error('Error in handleFailure:', error);
@@ -136,6 +137,8 @@ export default async function removeFromQueue(taskId: string, interval: number) 
 
 export const handleNotification = (taskData: any, url: string) => {
     // If Discord webhook is provided, send Discord notification
+    console.log('we came to handle notification')
+    console.log('this is tak data', taskData)
     if (taskData.notifyDiscord && taskData.discordWebhook) {
         mailQueue.add('mail-queue', {
             email: taskData.email,
@@ -158,6 +161,7 @@ export const handleNotification = (taskData: any, url: string) => {
     }
 
     // Default: send email notification if Discord is not provided
+    console.log('we came to handle email')
     mailQueue.add('mail-queue', {
         email: taskData.email,
         url,

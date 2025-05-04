@@ -28,12 +28,15 @@ export default class NotificationService {
     }
 
     private async sendMail({ to, subject, html }: MailPayload) {
-        await this.transporter.sendMail({
+      // console.log('sending email')
+      return
+       const res =  await this.transporter.sendMail({
             from: this.hostEmail,
             to,
             subject,
             html
         });
+        console.log('email sent', res)
     }
 
     private async sendDiscord({ webhookUrl, message }: DiscordPayload) {
@@ -56,6 +59,7 @@ export default class NotificationService {
 
 
     async sendEmailFailureAlert(email: string, url: string): Promise<void> {
+      console.log('we came to send email failer', email,url)
         const subject = `🚨 API Down Alert: ${url}`;
         const html = `
           <h2>Uptime Monitor Alert</h2>
