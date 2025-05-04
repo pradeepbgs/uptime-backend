@@ -26,9 +26,9 @@ export const addTask = async (ctx: ContextType) => {
         if (!url || !interval)
             return ctx.json({ message: 'Url and interval are required' }, 400)
 
-        // if (interval < 1 || interval > 60) {
-        //     return ctx.json({ message: 'Interval must be between 1 and 60 minutes' }, 400);
-        // }
+        if (interval < 1 || interval > 60) {
+            return ctx.json({ message: 'Interval must be between 1 and 60 minutes' }, 400);
+        }
 
         const taskCount = await TaskModel.countDocuments({ User: user._id });
 
@@ -38,11 +38,11 @@ export const addTask = async (ctx: ContextType) => {
             }, 400);
         }
 
-        // if (interval < user.minInterval) {
-        //     return ctx.json({
-        //         message: `Minimum interval for your plan is ${user.minInterval} minute(s).`,
-        //     }, 400);
-        // }
+        if (interval < user.minInterval) {
+            return ctx.json({
+                message: `Minimum interval for your plan is ${user.minInterval} minute(s).`,
+            }, 400);
+        }
 
         const task = await TaskModel.create({
             url,
@@ -62,7 +62,8 @@ export const addTask = async (ctx: ContextType) => {
                 taskId: task._id,
                 max: user.maxTasks,
                 webhook: '',
-                interval
+                interval,
+                email: user.email
             }, {
             jobId: task._id as string,
             repeat: {
@@ -144,7 +145,7 @@ export const updateTask = async (ctx: ContextType) => {
 
 export const getTaskDetails = async (ctx: ContextType) => {
     try {
-      const user: IUser = ctx.get('user');
+      const user: IUser = ctx.get('user')!;
       const id = ctx.params.id;
   
       if (!id || !Types.ObjectId.isValid(id)) {
