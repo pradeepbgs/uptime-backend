@@ -60,17 +60,17 @@ export const addTask = async (ctx: ContextType) => {
             {
                 url,
                 taskId: task._id,
-                max: user.maxTasks,
+                max: 3,
                 webhook: '',
                 interval,
-                email: user.email
+                email: user.email,
+                isActive: true,
+                failedCount:0,
             }, {
-            jobId: task._id as string,
-            repeat: {
-                every: interval * 60 * 1000
-            },
-            attempts:3,
-            
+            jobId: task._id.toString() as string,
+            removeOnComplete: true,
+            removeOnFail: true,
+            delay:0,
         })
         return ctx.json({ message: 'Task added successfully', task: task }, 200)
     } catch (error) {

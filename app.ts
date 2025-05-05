@@ -10,32 +10,35 @@ import { UserModel } from "./src/models/user.model";
 const secret = process.env.JWT_SECRET!
 
 const app = new Diesel({
-    jwtSecret: secret
+  jwtSecret: secret
 })
 
 
 export async function authJwt(ctx: ContextType): Promise<void | null | Response> {
-  const token = ctx.cookies?.accessToken ?? ctx.req.headers?.authorization?.split(" ")[1];
+  let token = ctx.cookies.accessToken || ctx.req.headers?.get('Authorization')
   console.log('token', token)
   if (!token) {
-    return ctx.json({ message: "Authentication token missing" },401);
+    return ctx.json({ message: "Authentication token missing" }, 401);
+  }
+  if (token.startsWith("Bearer ")) {
+    token = token.slice(7, token.length);
   }
   try {
     const user = jwt.verify(token, secret);
     // console.log('user', user)
-    ctx.set('user',user);
+    ctx.set('user', user);
   } catch (error) {
     console.log('error', error)
-    return ctx.json({ message: "Invalid token" },403);
+    return ctx.json({ message: "Invalid token" }, 403);
   }
 }
 
 // cors
 app.use(cors({
-    origin: "http://localhost:3000",
-    // methods: ["GET", "POST", "PUT", "DELETE"],
-    // allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
+  origin: "http://localhost:3000",
+  // methods: ["GET", "POST", "PUT", "DELETE"],
+  // allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 }))
 
 // Logger
@@ -53,9 +56,9 @@ app.useLogger({ app })
 
 // rate-limit
 const limit = rateLimit({
-    windowMs: 1 * 60 * 1000,
-    max: 200,
-    message: "Too many requests, please try again later.",
+  windowMs: 1 * 60 * 1000,
+  max: 200,
+  message: "Too many requests, please try again later.",
 })
 
 app.use(limit)
@@ -64,30 +67,30 @@ app.use(securityMiddleware)
 
 
 app
-.setupFilter()
-.publicRoutes('/','/cookie',"/api/v1/auth/google", "/api/v1/auth/google/callback", '/api/v1/logout')
-.permitAll()
-.authenticate([authJwt])
+  .setupFilter()
+  .publicRoutes('/', '/cookie', "/api/v1/auth/google", "/api/v1/auth/google/callback", '/api/v1/logout')
+  .permitAll()
+  .authenticate([authJwt])
 
 
 app.get("/", (ctx: ContextType) => {
-    return ctx.json({ message: "Hello World" })
+  return ctx.json({ message: "Hello World" })
 })
 
-.get("/cookie", (ctx: ContextType) => {
+  .get("/cookie", (ctx: ContextType) => {
     const accessToken = jwt.sign({ userId: "123" }, secret, { expiresIn: '15m' });
     const refreshToken = jwt.sign({ userId: "123" }, secret, { expiresIn: '7d' });
 
     // Set cookies
     const cookieOptions: CookieOptions = {
-        httpOnly: true,
-        path: '/',
-        secure: false, // 🚫 No HTTPS on localhost, so must be false
-        sameSite: 'Lax', // ✅ Better for localhost dev
-        // ❌ Remove domain for localhost, or use actual domain in prod
-        maxAge: 7 * 24 * 60 * 60,
-      };
-      
+      httpOnly: true,
+      path: '/',
+      secure: false, // 🚫 No HTTPS on localhost, so must be false
+      sameSite: 'Lax', // ✅ Better for localhost dev
+      // ❌ Remove domain for localhost, or use actual domain in prod
+      maxAge: 7 * 24 * 60 * 60,
+    };
+
 
     ctx.setCookie('accessToken', accessToken, cookieOptions);
     ctx.setCookie('refreshToken', refreshToken, cookieOptions);
@@ -99,5 +102,5 @@ app.route("/api/v1/auth", authRouter)
 app.route("/api/v1/task", taskRouter)
 
 export {
-    app
+  app
 }
