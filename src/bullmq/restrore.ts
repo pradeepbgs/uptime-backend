@@ -1,4 +1,4 @@
-import { pingQueue } from "./queue";
+import { pingQueue } from "./pingQueue";
 import { TaskModel, type ITask } from "../models/user.model";
 
 

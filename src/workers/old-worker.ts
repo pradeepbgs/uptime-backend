@@ -1,8 +1,8 @@
 import { Worker } from "bullmq";
 import { redisClient } from "../config/redis";
-import { pingQueue } from "./queue";
-import { mailQueue } from "./mailQueue";
 import type mongoose from "mongoose";
+import { pingQueue } from "../bullmq/pingQueue";
+import { mailQueue } from "../bullmq/mailQueue";
 
 
 interface Task {

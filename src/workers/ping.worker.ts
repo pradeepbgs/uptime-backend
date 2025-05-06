@@ -1,8 +1,8 @@
 import { Job, Worker } from "bullmq";
 import { redisClient } from "../config/redis";
-import { pingQueue } from "./queue";
-import { mailQueue } from "./mailQueue";
 import type mongoose from "mongoose";
+import { pingQueue } from "../bullmq/pingQueue";
+import { mailQueue } from "../bullmq/mailQueue";
 
 
 interface Task {
@@ -74,12 +74,12 @@ const worker = new Worker(
                 failedCount: 0
             }));
 
-            await pingQueue.add("ping-queue", job.data, {
-                jobId: `${taskId}-${Date.now()}`,
-                delay: interval * 60 * 1000,
-                removeOnComplete: true,
-                removeOnFail: true,
-              });
+            // await pingQueue.add("ping-queue", job.data, {
+            //     jobId: `${taskId}-${Date.now()}`,
+            //     delay: interval * 60 * 1000,
+            //     removeOnComplete: true,
+            //     removeOnFail: true,
+            //   });
 
         } catch (error) {
             console.error("Worker error:", error);

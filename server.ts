@@ -1,12 +1,11 @@
 import { app } from "./app";
-import { pingQueue } from "./src/bullmq/queue";
-import connectDB from "./src/db";
+import connectDB from "./src/config/db";
 
 const port = process.env.PORT || 3001;
 
 
 await connectDB()
-.then(() => app.listen(port, () => console.log(`Server is running on port ${port}`)))
+    .then(() => app.listen(port, () => console.log(`Server is running on port ${port}`)))
 
 
 

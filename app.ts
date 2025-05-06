@@ -5,17 +5,39 @@ import jwt from 'jsonwebtoken'
 import { cors } from "diesel-core/cors";
 import { authRouter } from "./src/routes/auth.route";
 import { taskRouter } from "./src/routes/task.route";
-import { UserModel } from "./src/models/user.model";
+// import { authJwt } from "./src/middlewares/authJwt";
+import { secret } from "./src/constant";
 
-const secret = process.env.JWT_SECRET!
 
-const app = new Diesel({
-  jwtSecret: secret
+const app = new Diesel()
+
+
+
+// cors
+app.use(cors({
+  origin: "http://localhost:3000",
+  // methods: ["GET", "POST", "PUT", "DELETE"],
+  // allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}))
+
+// Logger
+app.useLogger({ app })
+
+
+// rate-limit
+const limit = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 200,
+  message: "Too many requests, please try again later.",
 })
 
+app.use(limit)
+
+app.use(securityMiddleware)
 
 export async function authJwt(ctx: ContextType): Promise<void | null | Response> {
-  let token = ctx.cookies.accessToken || ctx.req.headers?.get('Authorization')
+  let token = ctx.req.headers?.get('Authorization') || ctx.cookies.accessToken
   console.log('token', token)
   if (!token) {
     return ctx.json({ message: "Authentication token missing" }, 401);
@@ -33,42 +55,15 @@ export async function authJwt(ctx: ContextType): Promise<void | null | Response>
   }
 }
 
-// cors
-app.use(cors({
-  origin: "http://localhost:3000",
-  // methods: ["GET", "POST", "PUT", "DELETE"],
-  // allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-}))
-
-// Logger
-app.useLogger({ app })
-
-
-// app.use((ctx: ContextType) => {
-//     const access_token = ctx.cookies.accessToken
-//     console.log(process.env.JWT_SECRET)
-//     const decoded = jwt.verify(access_token, process.env.JWT_SECRET)
-//     console.log('decoded', decoded)
-// })
-
-
-
-// rate-limit
-const limit = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 200,
-  message: "Too many requests, please try again later.",
-})
-
-app.use(limit)
-
-app.use(securityMiddleware)
-
-
 app
   .setupFilter()
-  .publicRoutes('/', '/cookie', "/api/v1/auth/google", "/api/v1/auth/google/callback", '/api/v1/logout')
+  .publicRoutes(
+    '/',
+    '/cookie',
+    "/api/v1/auth/google",
+    "/api/v1/auth/google/callback",
+    '/api/v1/logout'
+  )
   .permitAll()
   .authenticate([authJwt])
 
@@ -81,16 +76,13 @@ app.get("/", (ctx: ContextType) => {
     const accessToken = jwt.sign({ userId: "123" }, secret, { expiresIn: '15m' });
     const refreshToken = jwt.sign({ userId: "123" }, secret, { expiresIn: '7d' });
 
-    // Set cookies
     const cookieOptions: CookieOptions = {
       httpOnly: true,
       path: '/',
-      secure: false, // 🚫 No HTTPS on localhost, so must be false
-      sameSite: 'Lax', // ✅ Better for localhost dev
-      // ❌ Remove domain for localhost, or use actual domain in prod
+      secure: false, 
+      sameSite: 'Lax',
       maxAge: 7 * 24 * 60 * 60,
     };
-
 
     ctx.setCookie('accessToken', accessToken, cookieOptions);
     ctx.setCookie('refreshToken', refreshToken, cookieOptions);
