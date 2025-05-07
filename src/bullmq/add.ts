@@ -21,9 +21,9 @@ import { pingQueue } from "./pingQueue";
     email:'exvillagerbgs@gmail.com'
   }));
   
-  pingQueue.add("ping-queue", {
+  await pingQueue.add("ping-queue", {
     taskId: "task-8",
-    url: "http://localhost:3002/cookie",
+    url: "http://localhost:3000",
     isActive: true,
     notifyDiscord: false,
     webHook: "",
@@ -33,7 +33,8 @@ import { pingQueue } from "./pingQueue";
     createdAt: new Date(),
     max: 3,
     interval: 0.1, // every 60s
-    email: "your@email.com"
+    email: "your@email.com",
+    taskKey: "task-8-initial"
   }, {
     jobId: "task-8-initial",
     delay: 0,
@@ -41,4 +42,4 @@ import { pingQueue } from "./pingQueue";
     removeOnFail: true,
   });
   
-  
+  console.log('added')

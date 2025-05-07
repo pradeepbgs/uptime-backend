@@ -1,6 +1,6 @@
 import { app } from "./app";
 import connectDB from "./src/config/db";
-
+import './src/workers/ping.worker'
 const port = process.env.PORT || 3001;
 
 

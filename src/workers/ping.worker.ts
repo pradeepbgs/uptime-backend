@@ -1,8 +1,10 @@
 import { Job, Worker } from "bullmq";
 import { redisClient } from "../config/redis";
-import type mongoose from "mongoose";
+import mongoose from "mongoose";
 import { pingQueue } from "../bullmq/pingQueue";
 import { mailQueue } from "../bullmq/mailQueue";
+import { TaskModel } from "../models/user.model";
+import type { isNoSubstitutionTemplateLiteral } from "typescript";
 
 
 interface Task {
@@ -29,7 +31,7 @@ for (const job of repeatables) {
 }
 
 
-await pingQueue.clean(0,0)
+await pingQueue.clean(0, 0)
 console.log("Worker is starting...");
 
 const worker = new Worker(
@@ -68,18 +70,21 @@ const worker = new Worker(
 
             console.log('server is up with url %s', res.status, url)
 
+            const taskKey = `${taskId}-${Date.now()}`
+
             await redisClient.set(`task:${taskId}`, JSON.stringify({
                 ...job.data,
                 isActive: true,
-                failedCount: 0
+                failedCount: 0,
+                taskKey: taskKey
             }));
 
-            // await pingQueue.add("ping-queue", job.data, {
-            //     jobId: `${taskId}-${Date.now()}`,
-            //     delay: interval * 60 * 1000,
-            //     removeOnComplete: true,
-            //     removeOnFail: true,
-            //   });
+            await pingQueue.add("ping-queue", job.data, {
+                jobId: taskKey,
+                delay: interval * 60 * 1000,
+                removeOnComplete: true,
+                removeOnFail: true,
+            });
 
         } catch (error) {
             console.error("Worker error:", error);
@@ -118,7 +123,7 @@ async function handleFailure(job: Job<Task>) {
             await pingQueue.add('ping-queue', job.data, {
                 jobId: `${taskId}-retry-${currentFailedCount}-${Date.now()}`,
                 attempts: 3,
-                delay:3000,
+                delay: 3000,
                 backoff: {
                     type: 'exponential',
                     delay: 5000
@@ -137,6 +142,19 @@ async function handleFailure(job: Job<Task>) {
         console.log('removing from queue');
         // await removeFromQueue(taskId,interval);
         jobFailureCounts.delete(taskId);
+        await redisClient.set(`task:${taskId}`, JSON.stringify({
+            ...job.data,
+            isActive: false,
+            failedCount: 3
+        }))
+
+        // const taskDb = await TaskModel.findById(taskId);
+        // if (taskDb) {
+        //     taskDb.isActive = false;
+        //     taskDb.failedCount = 3;
+        //     await taskDb.save();
+        // }
+
         console.log('sending failure notification');
         // handleNotification(job);
 
@@ -147,13 +165,13 @@ async function handleFailure(job: Job<Task>) {
 }
 
 export default async function removeFromQueue(taskId: string, interval: number) {
-   const res =  await pingQueue.removeRepeatable('ping-queue', {
-      every: interval * 1000, // <- match the exact value used in `add`
-      jobId: taskId
+    const res = await pingQueue.removeRepeatable('ping-queue', {
+        every: interval * 1000, // <- match the exact value used in `add`
+        jobId: taskId
     });
     console.log('res if rm', res)
-  }
-  
+}
+
 
 
 

@@ -57,24 +57,25 @@ export const addTask = async (ctx: ContextType) => {
         if (!task) {
             return ctx.json({ message: 'error while saving task' }, 500)
         }
-        await redisClient.set(`task:${task._id}`, JSON.stringify(task))
+        await redisClient.set(`task:${task._id.toString()}`, JSON.stringify(task))
         const res = await pingQueue.add('ping-queue',
             {
                 url,
-                taskId: task._id,
+                taskId: task._id.toString(),
                 max: 3,
                 webhook: '',
                 interval,
                 email: user.email,
                 isActive: true,
                 failedCount: 0,
+                taskKey:''
             }, {
             jobId: task._id.toString() as string,
             removeOnComplete: true,
             removeOnFail: true,
             delay: 0,
         })
-        
+
         if (!res) {
             return ctx.json({ message: 'error while adding task to queue' }, 500)
         }
@@ -137,13 +138,14 @@ export const updateTask = async (ctx: ContextType) => {
         const res = await pingQueue.add('ping-queue',
             {
                 url,
-                taskId: task._id,
+                taskId: task._id.toString(),
                 max: 3,
                 webhook: '',
                 interval,
                 email: user.email,
                 isActive: true,
                 failedCount: 0,
+                taskKey:''
             }, {
             jobId: task._id.toString() as string,
             removeOnComplete: true,
@@ -199,6 +201,7 @@ export const getTaskDetails = async (ctx: ContextType) => {
 export const deleteTask = async (ctx: ContextType) => {
     try {
         const user: IUser = ctx.get('user')!;
+
         const id = ctx.params.id
         if (!id)
             return ctx.json({ message: 'Task Id is required' }, 400)
@@ -207,15 +210,23 @@ export const deleteTask = async (ctx: ContextType) => {
         if (!task) {
             return ctx.json({ message: 'Task not found' }, 404)
         }
-        const redisResponse = await redisClient.del(`task:${task._id}`)
-        if (!redisResponse) {
-            return ctx.json({ message: 'error while deleting task from redis' }, 500)
-        }
-        const res = await pingQueue.remove(task?._id.toString() as string)
 
-        if (!res) {
-            return ctx.json({ message: 'error while removing task from the queue' }, 500)
+        const jobDataString = await redisClient.get(`task:${task._id}`)
+        if (!jobDataString) {
+            return ctx.json({ message: 'no Job found with this ID' }, 500)
         }
+
+        const jobData = JSON.parse(jobDataString);
+
+        const job = await pingQueue.getJob(jobData?.taskKey);
+        if (job) {
+            await job.remove();
+        } else {
+           return ctx.json({ message: 'Job not found in queue' }, 500)
+        }
+
+        await redisClient.del(`task:${task._id}`)
+
         return ctx.json({ message: 'Task deleted successfully' }, 200)
     } catch (error) {
         return ctx.json({ message: 'error while deleting task' }, 500)
