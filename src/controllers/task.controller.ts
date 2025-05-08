@@ -1,19 +1,11 @@
 import type { ContextType } from "diesel-core";
-import { TaskModel, UserModel, type IUser } from "../models/user.model";
+import { TaskModel, UserModel, type ITask, type IUser } from "../models/user.model";
 import { pingQueue } from "../bullmq/pingQueue";
 import { redisClient } from "../config/redis";
 import { Types } from "mongoose";
-
-
+import { removeTask } from "../utils/removeTask";
 
 export const addTask = async (ctx: ContextType) => {
-    // TASK:
-    // - Authenticate user
-    // - Extract URL and interval
-    // - Free users: interval ≥ 10 min, max 5 tasks
-    // - Paid users: interval ≥ 1 min, max 20 tasks
-    // - Webhook support will be added later
-
     try {
         let IncomingUser: IUser = ctx.get('user')!;
         const body = await ctx.body;
@@ -68,7 +60,7 @@ export const addTask = async (ctx: ContextType) => {
                 email: user.email,
                 isActive: true,
                 failedCount: 0,
-                taskKey:''
+                taskKey: ''
             }, {
             jobId: task._id.toString() as string,
             removeOnComplete: true,
@@ -90,10 +82,19 @@ export const addTask = async (ctx: ContextType) => {
 export const getUserTasks = async (ctx: ContextType) => {
     try {
         const user: IUser = ctx.get('user')!;
+       
+        // const key = `user-task:${user?._id}`;
+        // const cachedTask = await redisClient.get(key);
+
+        // if (cachedTask) {
+        //     return ctx.json({ task: JSON.parse(cachedTask) });
+        // }
+
         const tasks = await TaskModel.find({ user: user._id });
         if (!tasks) {
             return ctx.json({ message: 'No tasks found' }, 404)
         }
+        // await redisClient.set(key, JSON.stringify(tasks));
         return ctx.json({ message: 'Tasks fetched successfully', tasks: tasks }, 200)
     } catch (error) {
         return ctx.json({ message: 'error while fetching tasks' }, 500)
@@ -135,6 +136,9 @@ export const updateTask = async (ctx: ContextType) => {
             task.interval = interval
         }
 
+        const { success } = await removeTask(task._id.toString())
+        if (!success) return ctx.json({ message: "Error while trying to update task while removing the existing job" }, 500);
+
         const res = await pingQueue.add('ping-queue',
             {
                 url,
@@ -145,7 +149,7 @@ export const updateTask = async (ctx: ContextType) => {
                 email: user.email,
                 isActive: true,
                 failedCount: 0,
-                taskKey:''
+                taskKey: ''
             }, {
             jobId: task._id.toString() as string,
             removeOnComplete: true,
@@ -206,24 +210,13 @@ export const deleteTask = async (ctx: ContextType) => {
         if (!id)
             return ctx.json({ message: 'Task Id is required' }, 400)
 
-        const task = await TaskModel.findOneAndDelete({ _id: id, user: user._id })
+        const task: ITask | null = await TaskModel.findOneAndDelete({ _id: id, user: user._id })
         if (!task) {
             return ctx.json({ message: 'Task not found' }, 404)
         }
 
-        const jobDataString = await redisClient.get(`task:${task._id}`)
-        if (!jobDataString) {
-            return ctx.json({ message: 'no Job found with this ID' }, 500)
-        }
-
-        const jobData = JSON.parse(jobDataString);
-
-        const job = await pingQueue.getJob(jobData?.taskKey);
-        if (job) {
-            await job.remove();
-        } else {
-           return ctx.json({ message: 'Job not found in queue' }, 500)
-        }
+        const { success, message } = await removeTask(task._id)
+        if (!success) return ctx.json({ message }, 500);
 
         await redisClient.del(`task:${task._id}`)
 
@@ -232,3 +225,4 @@ export const deleteTask = async (ctx: ContextType) => {
         return ctx.json({ message: 'error while deleting task' }, 500)
     }
 }
+

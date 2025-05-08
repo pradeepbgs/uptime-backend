@@ -8,6 +8,6 @@ COPY . .
 
 RUN bun install
 
-EXPOSE 3001
+EXPOSE 8000
 
 ENTRYPOINT ["bun", "run", "start"]

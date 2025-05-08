@@ -11,7 +11,8 @@ services:
   uptime-bot:
     build: .
     ports:
-      - "3001:3001"
+      - "8000:8000"
+      
     environment:
       - PORT=${PORT}
       - JWT_SECRET=${JWT_SECRET}
@@ -23,6 +24,9 @@ services:
       - REFRESH_TOKEN_EXPIRY=${REFRESH_TOKEN_EXPIRY}
       - MAIL_USER=${MAIL_USER}
       - MAIL_PASS=${MAIL_PASS}
+      - PRODUCTION={PRODUCTION}
+      - APP_URL={APP_URL}
+
     depends_on:
       - redis
 

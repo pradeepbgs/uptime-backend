@@ -11,13 +11,13 @@ import { secret } from "./src/constant";
 
 const app = new Diesel()
 
-
+const origins = process.env.PRODUCTION ? process.env.APP_URL : 'http://localhost:3000'
 
 // cors
 app.use(cors({
-  origin: "http://localhost:3000",
-  // methods: ["GET", "POST", "PUT", "DELETE"],
-  // allowedHeaders: ["Content-Type", "Authorization"],
+  origin: origins,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }))
 
@@ -79,7 +79,7 @@ app.get("/", (ctx: ContextType) => {
     const cookieOptions: CookieOptions = {
       httpOnly: true,
       path: '/',
-      secure: false, 
+      secure: false,
       sameSite: 'Lax',
       maxAge: 7 * 24 * 60 * 60,
     };
