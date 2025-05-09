@@ -7,15 +7,15 @@ import { authRouter } from "./src/routes/auth.route";
 import { taskRouter } from "./src/routes/task.route";
 // import { authJwt } from "./src/middlewares/authJwt";
 import { secret } from "./src/constant";
+import { authJwt } from "./src/middlewares/authJwt";
 
 
 const app = new Diesel()
 
 const origins = process.env.PRODUCTION ? process.env.APP_URL : 'http://localhost:3000'
-
 // cors
 app.use(cors({
-  origin: origins,
+  origin: 'http://localhost:3000',
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
@@ -36,24 +36,24 @@ app.use(limit)
 
 app.use(securityMiddleware)
 
-export async function authJwt(ctx: ContextType): Promise<void | null | Response> {
-  let token = ctx.req.headers?.get('Authorization') || ctx.cookies.accessToken
-  console.log('token', token)
-  if (!token) {
-    return ctx.json({ message: "Authentication token missing" }, 401);
-  }
-  if (token.startsWith("Bearer ")) {
-    token = token.slice(7, token.length);
-  }
-  try {
-    const user = jwt.verify(token, secret);
-    // console.log('user', user)
-    ctx.set('user', user);
-  } catch (error) {
-    console.log('error', error)
-    return ctx.json({ message: "Invalid token" }, 403);
-  }
-}
+// export async function authJwt(ctx: ContextType): Promise<void | null | Response> {
+//   let token = ctx.req.headers?.get('Authorization') || ctx.cookies.accessToken
+//   // console.log('token', token)
+//   if (!token) {
+//     return ctx.json({ message: "Authentication token missing" }, 401);
+//   }
+//   if (token.startsWith("Bearer ")) {
+//     token = token.slice(7, token.length);
+//   }
+//   try {
+//     const user = jwt.verify(token, secret);
+//     // console.log('user', user)
+//     ctx.set('user', user);
+//   } catch (error) {
+//     console.log('error', error)
+//     return ctx.json({ message: "Invalid token" }, 403);
+//   }
+// }
 
 app
   .setupFilter()

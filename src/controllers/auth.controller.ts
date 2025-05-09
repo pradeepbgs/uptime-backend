@@ -2,8 +2,9 @@ import type { ContextType, CookieOptions } from "diesel-core"
 import { oAuthClient } from "../config/oauth";
 import { UserModel, type IUser } from "../models/user.model";
 import { generateAccessAndRefreshToken } from "../utils/generate.token";
+import NotificationService from "../services/mail.service";
 
-
+const notificationService = NotificationService.getInstance()
 
 export const Auth = async (ctx: ContextType) => {
     try {
@@ -82,6 +83,8 @@ export const Auth = async (ctx: ContextType) => {
                 accessToken,
                 refreshToken
             }
+            // non-blocking will send in background
+            notificationService.sendWelcomeEmail(newUser.email, newUser.name)
         }
 
         return ctx.json(response)
