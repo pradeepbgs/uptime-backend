@@ -10,7 +10,7 @@ interface jwtToken extends JwtPayload {
 
 export async function authJwt(ctx: ContextType): Promise<void | null | Response> {
     try {
-        let token = ctx.cookies?.accessToken ?? ctx.req?.headers?.get("Authorization");
+        let token = ctx.req?.headers?.get("Authorization") ?? ctx.cookies?.accessToken
 
         if (!token) {
             return ctx.json({ message: "Unauthorized", error: "No token provided" }, 401);

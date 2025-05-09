@@ -127,7 +127,7 @@ const userSchema = new Schema<IUser>({
     },
     minInterval: {
         type: Number,
-        default: 10
+        default: 5
     }
 }, { timestamps: true })
 

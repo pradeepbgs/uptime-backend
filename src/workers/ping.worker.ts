@@ -4,7 +4,6 @@ import mongoose from "mongoose";
 import { pingQueue } from "../bullmq/pingQueue";
 import { mailQueue } from "../bullmq/mailQueue";
 import { TaskModel } from "../models/user.model";
-import type { isNoSubstitutionTemplateLiteral } from "typescript";
 
 
 interface Task {
@@ -107,6 +106,7 @@ async function handleFailure(job: Job<Task>) {
             failedCount = 0,
             interval,
         } = job.data;
+        console.log('taskId', taskId)
         let currentFailedCount = jobFailureCounts.get(taskId) || 0;
         currentFailedCount++;
         console.log('into handle failure');
@@ -122,8 +122,7 @@ async function handleFailure(job: Job<Task>) {
             console.log('adding retry job')
             await pingQueue.add('ping-queue', job.data, {
                 jobId: `${taskId}-retry-${currentFailedCount}-${Date.now()}`,
-                attempts: 3,
-                delay: 3000,
+                delay:3000,
                 backoff: {
                     type: 'exponential',
                     delay: 5000

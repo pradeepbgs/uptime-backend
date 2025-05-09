@@ -28,8 +28,6 @@ export default class NotificationService {
     }
 
     private async sendMail({ to, subject, html }: MailPayload) {
-      // console.log('sending email')
-      return
        const res =  await this.transporter.sendMail({
             from: this.hostEmail,
             to,
@@ -70,10 +68,10 @@ export default class NotificationService {
         await this.sendMail({ to: email, subject, html });
     }
 
-    async sendWelcomeEmail(email: string, username: string): Promise<void> {
-        const subject = `👋 Welcome, ${username}`;
+    async sendWelcomeEmail(email: string, name: string): Promise<void> {
+        const subject = `👋 Welcome, ${name}`;
         const html = `<p>
-        Hi ${username}, welcome to our uptime-bot! We're excited to have you on board. 
+        Hi ${name}, welcome to our uptime-bot! We're excited to have you on board. 
         You can start monitoring your APIs by adding them to our monitoring service!
         </p>`;
         await this.sendMail({ to: email, subject, html });

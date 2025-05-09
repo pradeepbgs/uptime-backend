@@ -20,12 +20,13 @@ export const addTask = async (ctx: ContextType) => {
         if (interval < 1 || interval > 60) {
             return ctx.json({ message: 'Interval must be between 1 and 60 minutes' }, 400);
         }
+
         const user = await UserModel.findById(IncomingUser?._id)
         if (!user) {
             return ctx.json({ message: 'User not found' }, 404)
         }
+
         const taskCount = await TaskModel.countDocuments({ user: user._id });
-        console.log('user and his task count', user, taskCount)
         if (taskCount >= user.maxTasks) {
             return ctx.json({
                 message: `You have reached the maximum number of tasks (${user.maxTasks}) for your plan.`,
@@ -82,7 +83,7 @@ export const addTask = async (ctx: ContextType) => {
 export const getUserTasks = async (ctx: ContextType) => {
     try {
         const user: IUser = ctx.get('user')!;
-       
+
         // const key = `user-task:${user?._id}`;
         // const cachedTask = await redisClient.get(key);
 
@@ -90,7 +91,7 @@ export const getUserTasks = async (ctx: ContextType) => {
         //     return ctx.json({ task: JSON.parse(cachedTask) });
         // }
 
-        const tasks = await TaskModel.find({ user: user._id });
+        const tasks = await TaskModel.find({ user: user._id }).sort({ createdAt: -1 })
         if (!tasks) {
             return ctx.json({ message: 'No tasks found' }, 404)
         }
@@ -109,19 +110,20 @@ export const updateTask = async (ctx: ContextType) => {
             return ctx.json({ message: 'Body is required' }, 400)
 
         const id = ctx.params.id
-        const { url, interval }: { url?: string; interval?: number; id?: string } = body;
+        const { url, interval, isActive }: { url?: string; interval?: number; isActive: boolean } = body;
 
-        if (!url || !interval || !id)
-            return ctx.json({ message: 'Url, interval and id are required' }, 400)
+        if (!id) return ctx.json({ message: 'Task ID is required' }, 400);
 
-        if (interval < 1 || interval > 60) {
-            return ctx.json({ message: 'Interval must be between 1 and 60 minutes' }, 400);
-        }
+        if (interval !== undefined) {
+            if (interval < 1 || interval > 60) {
+                return ctx.json({ message: 'Interval must be between 1 and 60 minutes' }, 400);
+            }
 
-        if (interval < user.minInterval) {
-            return ctx.json({
-                message: `Minimum interval for your plan is ${user.minInterval} minute(s).`,
-            }, 400);
+            // if (interval < user.minInterval) {
+            //     return ctx.json({
+            //         message: `Minimum interval for your plan is ${user.minInterval} minute(s).`,
+            //     }, 400);
+            // }
         }
 
         const task = await TaskModel.findOne({ _id: id, user: user._id });
@@ -129,37 +131,37 @@ export const updateTask = async (ctx: ContextType) => {
             return ctx.json({ message: 'Task not found' }, 404)
         }
 
-        if (url) {
-            task.url = url
-        }
-        if (interval) {
-            task.interval = interval
-        }
+        if (url !== task.url ) task.url = url;
+        if (interval !== undefined) task.interval = interval;
+        if (typeof isActive === 'boolean') task.isActive = isActive;
 
         const { success } = await removeTask(task._id.toString())
-        if (!success) return ctx.json({ message: "Error while trying to update task while removing the existing job" }, 500);
+        if (!success) return ctx.json({ message: "Error removing old job" }, 500);
 
-        const res = await pingQueue.add('ping-queue',
-            {
-                url,
-                taskId: task._id.toString(),
-                max: 3,
-                webhook: '',
-                interval,
-                email: user.email,
-                isActive: true,
-                failedCount: 0,
-                taskKey: ''
-            }, {
-            jobId: task._id.toString() as string,
-            removeOnComplete: true,
-            removeOnFail: true,
-            delay: 0,
-        })
-        if (!res) {
-            return ctx.json({ message: 'error while adding updated task to the queue' }, 500)
+        if (task.isActive) {
+            const res = await pingQueue.add('ping-queue',
+                {
+                    url: task.url,
+                    taskId: task._id.toString(),
+                    max: 3,
+                    webhook: '',
+                    interval: task.interval,
+                    email: user.email,
+                    isActive: true,
+                    failedCount: 0,
+                    taskKey: '',
+                }, {
+                jobId: task._id.toString(),
+                removeOnComplete: true,
+                removeOnFail: true,
+                delay: 0,
+            });
+
+            if (!res) {
+                return ctx.json({ message: 'Error while adding updated task to the queue' }, 500);
+            }
         }
-
+        // in future we will add an email send func that will notify user if they have activated or deactived the url
         await task.save();
         return ctx.json({ message: 'Task updated successfully', task: task }, 200)
     } catch (error) {
